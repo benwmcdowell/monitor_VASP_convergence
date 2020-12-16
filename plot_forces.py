@@ -12,6 +12,9 @@ from numpy import sqrt
 
 def main(outcar):
     tempx=[0]
+    #the avg, min, and max forces are tracked in the following lists
+    #each is formatted as: [[x_component],[y_component],[z_component],[total]]
+    #each sublist is the length of the total number of ionic steps
     max_force=[[],[],[],[]]
     avg_force=[[],[],[],[]]
     min_force=[[],[],[],[]]
@@ -58,20 +61,22 @@ def main(outcar):
                         avg_force[i].append(temp_avg[i])
                     if len(avg_force[0])>1:
                         tempx.append(tempx[-1]+potim)
-        fig,ax=plt.subplots(4,1,sharex=True,figsize=(14,8))
-        for i,j in zip(range(4),['_x','_y','_z','_{total}']):
-            for k,l in zip([max_force[i],min_force[i],avg_force[i]],['max force','min force','avg force']):
-                ax[i].scatter(tempx,k,label=l)
-            ax[i].plot([tempx[0],tempx[-1]],[tol,tol],linestyle='dashed',label='convergence')
-            ax[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
-            ax[i].set(ylim=(0-max(max_force[i])*0.05,max(max_force[i])*1.05))
-        ax[2].set(xlabel='optimization time / fs')
-        handles, labels = ax[2].get_legend_handles_labels()
-        fig.legend(handles, labels, bbox_to_anchor=(1.01,0.5), loc='right')
-        plt.show()
     except:
         print('error reading OUTCAR')
         sys.exit(1)
+    
+    #each component and the total force are plotted on their own subplot, along with the convergence criteria set by EDIFFG
+    fig,ax=plt.subplots(4,1,sharex=True,figsize=(14,8))
+    for i,j in zip(range(4),['_x','_y','_z','_{total}']):
+        for k,l in zip([max_force[i],min_force[i],avg_force[i]],['max force','min force','avg force']):
+            ax[i].scatter(tempx,k,label=l)
+        ax[i].plot([tempx[0],tempx[-1]],[tol,tol],linestyle='dashed',label='convergence')
+        ax[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
+        ax[i].set(ylim=(0-max(max_force[i])*0.05,max(max_force[i])*1.05))
+    ax[2].set(xlabel='optimization time / fs')
+    handles, labels = ax[2].get_legend_handles_labels()
+    fig.legend(handles, labels, bbox_to_anchor=(1.01,0.5), loc='right')
+    plt.show()
 
 if __name__=='__main__':
     inputfile='./OUTCAR'
