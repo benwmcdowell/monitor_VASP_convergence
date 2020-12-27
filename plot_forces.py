@@ -31,6 +31,8 @@ def main(outcar):
                 if 'POTIM' in line:
                     line=line.split()
                     potim=float(line[line.index('POTIM')+2])
+                    if potim==0.0:
+                        potim=-1.0
                 if 'NIONS' in line:
                     line=line.split()
                     atomnum=int(line[line.index('NIONS')+2])
@@ -60,21 +62,24 @@ def main(outcar):
                         min_force[i].append(temp_min[i])
                         avg_force[i].append(temp_avg[i])
                     if len(avg_force[0])>1:
-                        tempx.append(tempx[-1]+potim)
+                        tempx.append(tempx[-1]+abs(potim))
     except:
         print('error reading OUTCAR')
         sys.exit(1)
     
     #each component and the total force are plotted on their own subplot, along with the convergence criteria set by EDIFFG
-    fig,ax=plt.subplots(4,1,sharex=True,figsize=(14,8))
+    fig,axs=plt.subplots(4,1,sharex=True,figsize=(14,8))
     for i,j in zip(range(4),['_x','_y','_z','_{total}']):
         for k,l in zip([max_force[i],min_force[i],avg_force[i]],['max force','min force','avg force']):
-            ax[i].scatter(tempx,k,label=l)
-        ax[i].plot([tempx[0],tempx[-1]],[tol,tol],linestyle='dashed',label='convergence')
-        ax[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
-        ax[i].set(ylim=(0-max(max_force[i])*0.05,max(max_force[i])*1.05))
-    ax[2].set(xlabel='optimization time / fs')
-    handles, labels = ax[2].get_legend_handles_labels()
+            axs[i].scatter(tempx,k,label=l)
+        axs[i].plot([tempx[0],tempx[-1]],[tol,tol],linestyle='dashed',label='convergence')
+        axs[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
+        axs[i].set(ylim=(0-max(max_force[i])*0.05,max(max_force[i])*1.05))
+    if potim>0.0:
+        axs[-1].set(xlabel='optimization time / fs')
+    else:
+        axs[-1].set(xlabel='optimization steps')
+    handles, labels = axs[2].get_legend_handles_labels()
     fig.legend(handles, labels, bbox_to_anchor=(1.01,0.5), loc='right')
     plt.show()
 
