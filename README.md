@@ -5,7 +5,7 @@ By default, forces will be read from 'OUTCAR' and plotted. Alternative files can
 
 Example of intended usage: python plot_forces or python plot_forces -i my_OUTCAR
 
-Compatible with: 
+Compatible with:
   VASP 5.4.4
   Python 2.7.13 and 3.6.5
   VTST 3.2
