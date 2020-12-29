@@ -67,6 +67,11 @@ def main(outcar):
         print('error reading OUTCAR')
         sys.exit(1)
     
+    for i in max_force[3]:
+        if i==0.0:
+            print('error: forces not calculated for at least one ionic step. consider switching to a force-based optimizer')
+            sys.exit(1)
+    
     #each component and the total force are plotted on their own subplot, along with the convergence criteria set by EDIFFG
     fig,axs=plt.subplots(4,1,sharex=True,figsize=(14,8))
     for i,j in zip(range(4),['_x','_y','_z','_{total}']):
