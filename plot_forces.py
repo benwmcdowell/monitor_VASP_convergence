@@ -1,21 +1,16 @@
 import matplotlib.pyplot as plt
 import sys
 import getopt
-from numpy import sqrt,array,dot
+from numpy import array,dot,percentile,average
 from numpy.linalg import norm
 
 def main(outcar,poscar):
     try:
-        lv, coord, atomtypes, atomnums, seldyn = parse_poscar(poscar)
+        seldyn = parse_poscar(poscar)[4]
     except ValueError or FileNotFoundError:
         seldyn='none'
-    tempx=[0]
-    #the avg, min, and max forces are tracked in the following lists
-    #each is formatted as: [[x_component],[y_component],[z_component],[total]]
-    #each sublist is the length of the total number of ionic steps
-    max_force=[[],[],[],[]]
-    avg_force=[[],[],[],[]]
-    min_force=[[],[],[],[]]
+    time=[0]
+    forces=[[],[],[],[]]
     try:
         with open(outcar,'r') as file:
             searching=True
@@ -38,51 +33,36 @@ def main(outcar,poscar):
                         seldyn=['TTT' for i in range(atomnum)]
                 elif 'TOTAL-FORCE' in line:
                     line=file.readline()
-                    temp_min=[1.0 for i in range(4)]
-                    temp_max=[0.0 for i in range(4)]
-                    temp_avg=[0.0 for i in range(4)]
+                    temp_forces=[[],[],[],[]]
                     for i in range(atomnum):
                         line=file.readline().split()
-                        temp_total=[]
+                        tempvar=[]
                         for j in range(3,6):
-                            tempvar=abs(float(line[j]))
-                            if seldyn[i][j-3]=='F':
-                                tempvar=0.0
-                            if tempvar<temp_min[j-3]:
-                                temp_min[j-3]=tempvar
-                            if tempvar>temp_max[j-3]:
-                                temp_max[j-3]=tempvar
-                            temp_avg[j-3]+=tempvar/atomnum
-                            temp_total.append(tempvar)
-                        tempvar=norm(temp_total)
-                        if tempvar<temp_min[3]:
-                            temp_min[3]=tempvar
-                        if tempvar>temp_max[3]:
-                            temp_max[3]=tempvar
-                        temp_avg[3]+=tempvar/atomnum
+                            if seldyn[i][j-3]=='T':
+                                temp_forces[j-3].append(abs(float(line[j])))
+                                tempvar.append(abs(float(line[j])))
+                        if len(tempvar)>0:
+                            temp_forces[3].append(norm(array(tempvar)))
                     for i in range(4):
-                        max_force[i].append(temp_max[i])
-                        min_force[i].append(temp_min[i])
-                        avg_force[i].append(temp_avg[i])
-                    if len(avg_force[0])>1:
-                        tempx.append(tempx[-1]+abs(potim))
+                        forces[i].append(temp_forces[i])
+                    if len(forces[0])>1:
+                        time.append(time[-1]+abs(potim))
     except:
         print('error reading OUTCAR')
         sys.exit(1)
     
-    for i in max_force[3]:
-        if i==0.0:
-            print('error: forces not calculated for at least one ionic step. consider switching to a force-based optimizer')
-            sys.exit(1)
-    
+    minima=[[[min(j) for j in i]] for i in forces]
+    averages=minima=[[[average(j) for j in i]] for i in forces]
+    maxima=minima=[[[max(j) for j in i]] for i in forces]
+    upperq=minima=[[[percentile(j,75) for j in i]] for i in forces]
+    lowerq=minima=[[[percentile(j,25) for j in i]] for i in forces]
     #each component and the total force are plotted on their own subplot, along with the convergence criteria set by EDIFFG
     fig,axs=plt.subplots(4,1,sharex=True,figsize=(14,8))
     for i,j in zip(range(4),['_x','_y','_z','_{total}']):
-        for k,l in zip([max_force[i],min_force[i],avg_force[i]],['max force','min force','avg force']):
-            axs[i].scatter(tempx,k,label=l)
-        axs[i].plot([tempx[0],tempx[-1]],[tol,tol],linestyle='dashed',label='convergence')
+        for k,l in zip(['minimum','lower quartile','average','upper quartile','maximum'],[minima,lowerq,averages,upperq,maxima]):
+            axs[i].scatter(time,l[i],label=k)
+        axs[i].plot([time[0],time[-1]],[tol,tol],linestyle='dashed',label='convergence')
         axs[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
-        axs[i].set(ylim=(0-max(max_force[i])*0.05,max(max_force[i])*1.05))
     if potim>0.0:
         axs[-1].set(xlabel='optimization time / fs')
     else:
