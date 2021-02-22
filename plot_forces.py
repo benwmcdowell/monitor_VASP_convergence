@@ -4,7 +4,12 @@ import getopt
 from numpy import array,dot,percentile,average
 from numpy.linalg import norm
 
-def main(outcar,poscar):
+def main(outcar,poscar,**args):
+    if 'quiet' in args and args['quiet']:
+        quiet=True
+    else:
+        quiet=False
+
     try:
         seldyn = parse_poscar(poscar)[4]
     except ValueError or FileNotFoundError:
@@ -50,16 +55,26 @@ def main(outcar,poscar):
     except:
         print('error reading OUTCAR')
         sys.exit(1)
+        
+    if len(time)==1:
+        print('zero ionic steps read from OUTCAR')
+        sys.exit()
     
     minima=[[[min(j) for j in i]] for i in forces]
     averages=minima=[[[average(j) for j in i]] for i in forces]
     maxima=minima=[[[max(j) for j in i]] for i in forces]
     upperq=minima=[[[percentile(j,75) for j in i]] for i in forces]
     lowerq=minima=[[[percentile(j,25) for j in i]] for i in forces]
+    if not quiet:
+        data_labels=['minimum','lower quartile','average','upper quartile','maximum']
+        data_sets=[minima,lowerq,averages,upperq,maxima]
+    else:
+        data_labels=['minimum','average','maximum']
+        data_sets=[minima,averages,maxima]
     #each component and the total force are plotted on their own subplot, along with the convergence criteria set by EDIFFG
     fig,axs=plt.subplots(4,1,sharex=True,figsize=(14,8))
     for i,j in zip(range(4),['_x','_y','_z','_{total}']):
-        for k,l in zip(['minimum','lower quartile','average','upper quartile','maximum'],[minima,lowerq,averages,upperq,maxima]):
+        for k,l in zip(data_labels,data_sets):
             axs[i].scatter(time,l[i],label=k)
         axs[i].plot([time[0],time[-1]],[tol,tol],linestyle='dashed',label='convergence')
         axs[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
@@ -98,17 +113,28 @@ def parse_poscar(ifile):
 if __name__=='__main__':
     outcar='./OUTCAR'
     poscar='./POSCAR'
+    quiet=False
     try:
-        opts,args=getopt.getopt(sys.argv[1:],'ho:',['help','input='])
+        opts,args=getopt.getopt(sys.argv[1:],'ho:p:q',['help','outcar=','poscar','quiet'])
     except getopt.GetoptError:
         print('error in command line syntax')
         sys.exit(2)
     for i,j in opts:
         if i in ['-h','--help']:
-            print('input options:\n\t-i, --input\t\tspecify an input file name other than ''OUTCAR''\n\t-p, --poscar\t\nhelp options:\n\t-h, --help\t\tdisplay this help message')
+            print('''
+input options:
+    -o, --outcar          specify a path to the OUTCAR file other than ./OUTCAR
+    -p, --poscar          specify an path to the POTCAR file other than ./POSCAR
+    -q, --quiet           suppresses plotting of quartiles for a less crowded output
+    
+help options:
+    -h, --help            display this help message
+                  ''')
             sys.exit()
         if i in ['-o','--outcar']:
             outcar=j
         if i in ['-p','--poscar']:
             poscar=j
-    main(outcar,poscar)
+        if i in ['-q','--quiet']:
+            quiet=True
+    main(outcar,poscar,quiet=quiet)
