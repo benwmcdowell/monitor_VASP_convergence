@@ -60,11 +60,11 @@ def main(outcar,poscar,**args):
         print('zero ionic steps read from OUTCAR')
         sys.exit()
     
-    minima=[[[min(j) for j in i]] for i in forces]
-    averages=minima=[[[average(j) for j in i]] for i in forces]
-    maxima=minima=[[[max(j) for j in i]] for i in forces]
-    upperq=minima=[[[percentile(j,75) for j in i]] for i in forces]
-    lowerq=minima=[[[percentile(j,25) for j in i]] for i in forces]
+    minima=[[min(j) for j in i] for i in forces]
+    averages=minima=[[average(j) for j in i] for i in forces]
+    maxima=minima=[[max(j) for j in i] for i in forces]
+    upperq=minima=[[percentile(j,75) for j in i] for i in forces]
+    lowerq=minima=[[percentile(j,25) for j in i] for i in forces]
     if not quiet:
         data_labels=['minimum','lower quartile','average','upper quartile','maximum']
         data_sets=[minima,lowerq,averages,upperq,maxima]
@@ -78,6 +78,8 @@ def main(outcar,poscar,**args):
             axs[i].scatter(time,l[i],label=k)
         axs[i].plot([time[0],time[-1]],[tol,tol],linestyle='dashed',label='convergence')
         axs[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
+        max_range=max(maxima[i])-min(minima[i])
+        axs[i].set_ylim(bottom=min(minima[i])-0.05*max_range,top=max(maxima[i])+0.05*max_range)
     if potim>0.0:
         axs[-1].set(xlabel='optimization time / fs')
     else:
