@@ -12,9 +12,9 @@ def main(outcar,poscar,**args):
 
     try:
         seldyn = parse_poscar(poscar)[4]
-    except ValueError or FileNotFoundError:
+    except IndexError or FileNotFoundError:
         seldyn='none'
-    time=[0]
+    time=[]
     forces=[[],[],[],[]]
     try:
         with open(outcar,'r') as file:
@@ -50,13 +50,15 @@ def main(outcar,poscar,**args):
                             temp_forces[3].append(norm(array(tempvar)))
                     for i in range(4):
                         forces[i].append(temp_forces[i])
-                    if len(forces[0])>1:
+                    if len(time)==0:
+                        time.append(0.0)
+                    else:
                         time.append(time[-1]+abs(potim))
     except:
         print('error reading OUTCAR')
         sys.exit(1)
         
-    if len(time)==1:
+    if len(time)==0:
         print('zero ionic steps read from OUTCAR')
         sys.exit()
     
