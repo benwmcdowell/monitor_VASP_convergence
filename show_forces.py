@@ -13,39 +13,35 @@ def show_forces(outcar,poscar,**args):
 
     try:
         lv,coord,atomtypes,atomnums,seldyn = parse_poscar(poscar)
-    except IndexError or FileNotFoundError:
-        print('missing POSCAR or CONTCAR file. exiting...')
-        sys.exit()
+    except ValueError:
+        lv,coord,atomtypes,atomnums = parse_poscar(poscar)
+        seldyn=['TTT' for i in range(sum(atomnums))]
         
     forces,time,tol=parse_forces(outcar,seldyn=seldyn)
     forces=[i[-1] for i in forces]
     
-    origins=[[],[],[]]
-    vectors=[[],[],[]]
-    counter=0    
-    for i in range(sum(atomnums)):
-        for j in range(3):
-            if seldyn[i][j]=='T':
-                origins[j].append(coord[i][j])
-                vectors[j].append(forces[j][counter]/tol)
-            elif 'T' in seldyn[i]:
-                origins[j].append(coord[i][j])
-                vectors[j].append(0.0)
-        if 'T' in seldyn[i]:
-            counter+=1
-    
     fig=plt.figure()
     ax=fig.add_subplot(111, projection='3d')
+    #plots atom coordinates
     for i in range(len(atomtypes)):
         tempvar=[[],[],[]]
         for j in range(atomnums[i]):
             for k in range(3):
                 tempvar[k].append(coord[j+sum(atomnums[:i])][k])
         ax.scatter(tempvar[0],tempvar[1],tempvar[2],s=2000/max([norm(lv[j]) for j in range(3)]),label=atomtypes[i])
-    ax.quiver(origins[0],origins[1],origins[2],vectors[0],vectors[1],vectors[2])
+    #plots force vectors
+    for i in range(len(atomtypes)):
+        tempo=[[],[],[]]
+        tempv=[[],[],[]]
+        for j in range(atomnums[i]):
+            for k in range(3):
+                tempo[k].append(coord[j+sum(atomnums[:i])][k])
+                tempv[k].append(forces[k][j+sum(atomnums[:i])]/max(forces[-1])*3)
+        ax.quiver(tempo[0],tempo[1],tempo[2],tempv[0],tempv[1],tempv[2])
     ax.set_xlim(0,norm(dot(array([1.0,0.0,0.0]),lv)))
     ax.set_ylim(0,norm(dot(array([0.0,1.0,0.0]),lv)))
     ax.set_zlim(0,norm(dot(array([0.0,0.0,1.0]),lv)))
+    fig.legend()
     plt.show()
     
 def parse_forces(ifile,**args):
@@ -86,6 +82,9 @@ def parse_forces(ifile,**args):
                             if seldyn[i][j-3]=='T':
                                 temp_forces[j-3].append(abs(float(line[j])))
                                 tempvar.append(abs(float(line[j])))
+                            else:
+                                temp_forces[j-3].append(0.0)
+                                tempvar.append(0.0)
                         if len(tempvar)>0:
                             temp_forces[3].append(norm(array(tempvar)))
                     for i in range(4):
