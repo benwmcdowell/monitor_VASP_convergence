@@ -14,6 +14,46 @@ def main(outcar,poscar,**args):
         seldyn = parse_poscar(poscar)[4]
     except IndexError or FileNotFoundError:
         seldyn='none'
+        
+    forces,time,tol=parse_forces(outcar,seldyn=seldyn)
+    
+    minima=[[min(j) for j in i] for i in forces]
+    averages=minima=[[average(j) for j in i] for i in forces]
+    maxima=minima=[[max(j) for j in i] for i in forces]
+    upperq=minima=[[percentile(j,75) for j in i] for i in forces]
+    lowerq=minima=[[percentile(j,25) for j in i] for i in forces]
+    if not quiet:
+        data_labels=['minimum','lower quartile','average','upper quartile','maximum']
+        data_sets=[minima,lowerq,averages,upperq,maxima]
+    else:
+        data_labels=['minimum','average','maximum']
+        data_sets=[minima,averages,maxima]
+    #each component and the total force are plotted on their own subplot, along with the convergence criteria set by EDIFFG
+    fig,axs=plt.subplots(4,1,sharex=True,figsize=(14,8))
+    for i,j in zip(range(4),['_x','_y','_z','_{total}']):
+        for k,l in zip(data_labels,data_sets):
+            axs[i].scatter(time,l[i],label=k)
+        if len(time)==1:
+            axs[i].plot([-1,1],[tol,tol],linestyle='dashed',label='convergence')
+        else:
+            axs[i].plot([time[0],time[-1]],[tol,tol],linestyle='dashed',label='convergence')
+        axs[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
+        max_range=max(maxima[i])-min(minima[i])
+        axs[i].set_ylim(bottom=min(minima[i])-0.05*max_range,top=max(maxima[i])+0.05*max_range)
+    if time[-1]-time[0]>0.0:
+        axs[-1].set(xlabel='optimization time / fs')
+    else:
+        axs[-1].set(xlabel='optimization steps')
+    handles, labels = axs[2].get_legend_handles_labels()
+    fig.legend(handles, labels, bbox_to_anchor=(1.01,0.5), loc='right')
+    plt.show()
+    
+def parse_forces(ifile,**args):
+    if 'seldyn' in args:
+        seldyn=args['seldyn']
+    else:
+        seldyn='none'
+    
     time=[]
     forces=[[],[],[],[]]
     try:
@@ -61,34 +101,8 @@ def main(outcar,poscar,**args):
     if len(time)==0:
         print('zero ionic steps read from OUTCAR')
         sys.exit()
-    
-    minima=[[min(j) for j in i] for i in forces]
-    averages=minima=[[average(j) for j in i] for i in forces]
-    maxima=minima=[[max(j) for j in i] for i in forces]
-    upperq=minima=[[percentile(j,75) for j in i] for i in forces]
-    lowerq=minima=[[percentile(j,25) for j in i] for i in forces]
-    if not quiet:
-        data_labels=['minimum','lower quartile','average','upper quartile','maximum']
-        data_sets=[minima,lowerq,averages,upperq,maxima]
-    else:
-        data_labels=['minimum','average','maximum']
-        data_sets=[minima,averages,maxima]
-    #each component and the total force are plotted on their own subplot, along with the convergence criteria set by EDIFFG
-    fig,axs=plt.subplots(4,1,sharex=True,figsize=(14,8))
-    for i,j in zip(range(4),['_x','_y','_z','_{total}']):
-        for k,l in zip(data_labels,data_sets):
-            axs[i].scatter(time,l[i],label=k)
-        axs[i].plot([time[0],time[-1]],[tol,tol],linestyle='dashed',label='convergence')
-        axs[i].set(ylabel='$F{}$'.format(j)+' / eV $\AA^{-1}$')
-        max_range=max(maxima[i])-min(minima[i])
-        axs[i].set_ylim(bottom=min(minima[i])-0.05*max_range,top=max(maxima[i])+0.05*max_range)
-    if potim>0.0:
-        axs[-1].set(xlabel='optimization time / fs')
-    else:
-        axs[-1].set(xlabel='optimization steps')
-    handles, labels = axs[2].get_legend_handles_labels()
-    fig.legend(handles, labels, bbox_to_anchor=(1.01,0.5), loc='right')
-    plt.show()
+        
+    return forces,time,tol
 
 def parse_poscar(ifile):
     with open(ifile, 'r') as file:
