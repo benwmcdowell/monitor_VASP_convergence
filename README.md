@@ -15,7 +15,7 @@ show_poscar.py
 Plots the coordinates of all atoms in VASP structure file. By default, ./CONTCAR is ready if it exists and is not empty. Otherwise, ./POSCAR is read. Alternative file paths can be specified by -p, --poscar.
 
 show_forces.py
-Displays the coordinates of all atoms and their current forces. If selective dynamics is enabled, only optimizable degrees of freedom are plotted. Atom display is the same as in 'show_poscar.py'. Coordiantes and forces are read from ./CONTCAR and ./OUTCAR by default.
+Displays the coordinates of all atoms and their current forces. If selective dynamics is enabled, only optimizable degrees of freedom are plotted. Atom display is the same as in 'show_poscar.py'. Coordiantes and forces are read from ./CONTCAR and ./OUTCAR by default. By default only forces larger than EDIFFG are shown. All forces can be shown by specifying -a, --all.
 
 
 Compatible with VASP 5.4.4, Python 2.7.13 and 3.6.5, and VTST 3.2.
