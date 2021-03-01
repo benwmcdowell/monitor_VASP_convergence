@@ -35,8 +35,9 @@ def show_forces(outcar,poscar,**args):
         tempv=[[],[],[]]
         for j in range(atomnums[i]):
             for k in range(3):
-                tempo[k].append(coord[j+sum(atomnums[:i])][k])
-                tempv[k].append(forces[k][j+sum(atomnums[:i])]/max(forces[-1])*3)
+                if forces[-1][j+sum(atomnums[:i])]>tol or show_all:
+                    tempo[k].append(coord[j+sum(atomnums[:i])][k])
+                    tempv[k].append(forces[k][j+sum(atomnums[:i])]/max(forces[-1])*3)
         ax.quiver(tempo[0],tempo[1],tempo[2],tempv[0],tempv[1],tempv[2])
     ax.set_xlim(0,norm(dot(array([1.0,0.0,0.0]),lv)))
     ax.set_ylim(0,norm(dot(array([0.0,1.0,0.0]),lv)))
@@ -132,7 +133,7 @@ if __name__=='__main__':
     poscar='./POSCAR'
     show_all=False
     try:
-        opts,args=getopt.getopt(sys.argv[1:],'ho:p:q',['help','outcar=','poscar','quiet'])
+        opts,args=getopt.getopt(sys.argv[1:],'ho:p:a',['help','outcar=','poscar','all'])
     except getopt.GetoptError:
         print('error in command line syntax')
         sys.exit(2)
@@ -142,7 +143,7 @@ if __name__=='__main__':
 input options:
     -o, --outcar          specify a path to the OUTCAR file other than ./OUTCAR
     -p, --poscar          specify an path to the POTCAR file other than ./POSCAR
-    -q, --quiet           suppresses plotting of quartiles for a less crowded output
+    -a, --all             all forces are plotted, as opposed to just those larger than EDIFFG
     
 help options:
     -h, --help            display this help message
