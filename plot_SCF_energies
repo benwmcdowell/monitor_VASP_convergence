@@ -1,0 +1,20 @@
+import matplotlib.pyplot as plt
+
+def plot_SCF_energies(outcar):
+    y=[]
+    with open(outcar) as file:
+        while True:
+            line=file.readline()
+            if not line:
+                break
+            line=line.split()
+            if line[1]=='Iteration' and line[3]=='0)':
+                y=[]
+            if 'TOTEN' in line:
+                y.append(float(line[4]))
+    x=[i for i in range(len(y))]
+    plt.figure()
+    plt.scatter(x,y)
+    plt.ylabel('energy / eV')
+    plt.xlabel('number of SCF steps')
+    plt.show()
