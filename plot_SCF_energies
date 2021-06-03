@@ -15,11 +15,21 @@ def plot_SCF_energies(outcar):
                     y=[]
             except IndexError:
                 pass
+            
             if 'energy-change' in line:
-                y.append(float(line[4][1:]))
+                if len(line)==6:
+                    y.append(abs(float(line[4][1:])))
+                if len(line)==7:
+                    y.append(abs(float(line[5])))
+            
+            if 'EDIFF' in line and line[-1]=='ELM':
+                ediff=float(line[2])
+            
     x=[i for i in range(len(y))]
     plt.figure()
-    plt.scatter(x,y)
+    plt.scatter(x,y,label='change in SCF energy')
+    plt.plot([x[0],x[-1]],[ediff,ediff],linestyle='dashed',label='convergence')
+    plt.legend()
     plt.ylabel('change in energy / eV')
     plt.xlabel('number of SCF steps')
     plt.show()
