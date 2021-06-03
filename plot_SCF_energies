@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import sys
+import getopt
 
 def plot_SCF_energies(outcar):
     y=[]
@@ -8,13 +10,33 @@ def plot_SCF_energies(outcar):
             if not line:
                 break
             line=line.split()
-            if line[1]=='Iteration' and line[3]=='0)':
-                y=[]
-            if 'TOTEN' in line:
-                y.append(float(line[4]))
+            try:
+                if line[1]=='Iteration' and line[3]=='0)':
+                    y=[]
+            except IndexError:
+                pass
+            if 'energy-change' in line:
+                y.append(float(line[4][1:]))
     x=[i for i in range(len(y))]
     plt.figure()
     plt.scatter(x,y)
-    plt.ylabel('energy / eV')
+    plt.ylabel('change in energy / eV')
     plt.xlabel('number of SCF steps')
     plt.show()
+    
+if __name__=='__main__':
+    outcar='./OUTCAR'
+    try:
+        opts,args=getopt.getopt(sys.argv[1:],'h',['help'])
+    except getopt.GetoptError:
+        print('error in command line syntax')
+        sys.exit(2)
+    for i,j in opts:
+        if i in ['-h','--help']:
+            print('''
+help options:
+    -h, --help            display this help message
+                  ''')
+            sys.exit()
+
+    plot_SCF_energies(outcar)
