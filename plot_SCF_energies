@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import sys
 import getopt
+import numpy as np
 
 def plot_SCF_energies(outcar):
     y=[]
@@ -26,11 +27,14 @@ def plot_SCF_energies(outcar):
                 ediff=float(line[2])
             
     x=[i for i in range(len(y))]
+    x=np.array(x)
+    y=np.array(y)
+    y=np.log10(y)
     plt.figure()
     plt.scatter(x,y,label='change in SCF energy')
     plt.plot([x[0],x[-1]],[ediff,ediff],linestyle='dashed',label='convergence')
     plt.legend()
-    plt.ylabel('change in energy / eV')
+    plt.ylabel('log|change in energy|')
     plt.xlabel('number of SCF steps')
     plt.show()
     
